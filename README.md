@@ -1,81 +1,83 @@
-# CineScope
+# CineScope — le guide du projet
 
-Application de découverte et de suivi de films, réalisée avec React, TypeScript, Vite et Tailwind CSS. Les informations et affiches proviennent de TMDB, en français.
+CineScope est mon projet de découverte de films. Je l’ai pensé comme un petit carnet de cinéma : on parcourt le catalogue TMDB, on garde les films qui nous tentent, puis on suit son avancée dans une bibliothèque personnelle.
 
-## Démarrage
+J’ai voulu garder une application simple à lancer et à comprendre. Elle n’a pas de compte utilisateur ni de serveur à administrer : les données personnelles restent dans le navigateur qui les a créées.
 
-Prérequis : Node.js 22.12+ (ou une version LTS plus récente) et npm.
+## Ce qu’il faut pour commencer
+
+- Node.js 22.12 ou une version LTS plus récente ;
+- npm ;
+- un jeton « API Read Access Token » TMDB pour charger le catalogue ;
+- un navigateur récent.
+
+Le jeton est utilisé depuis le navigateur par l’application. Il ne faut donc y mettre qu’un jeton de lecture TMDB, jamais un mot de passe ou un autre secret.
+
+## Installer et lancer CineScope
+
+Depuis un terminal ouvert dans le dossier du projet :
 
 ```sh
 npm ci
-cp .env.example .env.local
-# Renseigner VITE_TMDB_ACCESS_TOKEN dans .env.local
+```
+
+Copier `.env.example` vers `.env.local`, puis renseigner la valeur du jeton :
+
+```env
+VITE_TMDB_ACCESS_TOKEN=votre_jeton_de_lecture_tmdb
+```
+
+Sous PowerShell, on peut créer le fichier avec `Copy-Item .env.example .env.local`. Si `.env.local` existe déjà, le conserver et le modifier sans l’écraser. Ensuite :
+
+```sh
 npm run dev
 ```
 
-Sous PowerShell, remplacer `cp` par `Copy-Item` si nécessaire. Un fichier `.env.local` existant doit être conservé : ne pas l'écraser.
+Vite affiche l’adresse locale à ouvrir dans le navigateur. Pour préparer la version de production, utiliser `npm run build`, puis `npm run preview` pour la consulter localement.
 
-Le jeton « API Read Access Token » est disponible dans les paramètres API de votre compte TMDB : https://www.themoviedb.org/settings/api. Il est envoyé à TMDB dans l'en-tête Authorization. Une variable VITE_* est intégrée au code du navigateur : utiliser uniquement un jeton de lecture TMDB, jamais un secret de compte. Ne pas versionner `.env.local`.
+## Ce que l’application sait faire
 
-## Fonctionnalités
+- parcourir et rechercher des films, puis consulter leur fiche ;
+- ajouter des favoris et ranger les films dans « À regarder », « En cours » ou « Vu » ;
+- attribuer une note personnelle de une à cinq étoiles ;
+- compléter un profil local, consulter ses statistiques et exporter ses données en JSON.
 
-- Accueil, catalogue, détails, recherche, favoris, bibliothèque, profil et page 404.
-- Catalogue TMDB : populaires, mieux notés et films au cinéma ; pagination jusqu'à la limite de 500 pages de l'API.
-- Recherche avec URL partageable, pagination et réinitialisation vers les films populaires.
-- Filtre par note minimale et tri par note ou année sur la page de résultats chargée.
-- Fiche complète : synopsis, date, durée, genres, votes, langue, pays, distribution.
-- Favoris indépendants de la page du catalogue, ajout et retrait depuis toute carte ou fiche.
-- Bibliothèque : À regarder, En cours, Vu ; déplacement dans les deux sens et retrait.
-- Choix aléatoire du film du soir parmi les films À regarder.
-- Notes personnelles de 1 à 5 étoiles, enregistrées par film.
-- Profil contrôlé, validation champ par champ, statistiques personnelles et export JSON.
-- Persistance locale du profil, des favoris, de la bibliothèque et des notes.
-- Images de remplacement, requêtes annulées à la navigation, erreurs avec nouvelle tentative et Error Boundary.
-- Interface responsive, navigation clavier, focus visibles et respect de la réduction des animations.
+Les routes et les principaux fichiers sont repérés ci-dessous. Le parcours des données venant de TMDB est expliqué dans [la documentation technique](technique/flux-tmdb.md).
 
-Les données sont propres au navigateur et à l'origine du site. Il n'y a pas d'authentification ni de synchronisation entre appareils. L'export constitue une copie lisible ; l'import automatique n'est pas implémenté. En cas d'indisponibilité de TMDB, les pages personnelles restent utilisables.
+| Emplacement | À quoi il sert |
+| --- | --- |
+| `src/App.tsx` | Routes, navigation générale et chargement des pages |
+| `src/pages/` | Catalogue, recherche, fiches, bibliothèque et profil |
+| `src/components/` | Cartes, navigation, pied de page et éléments d’interface |
+| `src/services/tmdb.ts` | Appels à TMDB et adaptation des réponses |
+| `src/hooks/useTmdb.ts` | Chargement, erreurs, annulation et nouvelle tentative |
+| `src/context/store.ts` | État, actions et validation des données locales |
+| `src/context/CollectionContext.tsx` | Partage de l’état et sauvegarde dans le navigateur |
+| `src/types/movie.ts` | Types partagés des films et du profil |
+| `src/test/` | Tests de l’application |
+| `.env.example` | Nom de la variable nécessaire, sans jeton personnel |
 
-## Architecture
+## Limites à connaître
 
-| Dossier          | Responsabilité                                                     |
-| ---------------- | ------------------------------------------------------------------ |
-| `src/components` | Navigation, cartes, images, messages, pagination et Error Boundary |
-| `src/pages`      | Catalogue/recherche, fiche, collections, profil                    |
-| `src/hooks`      | Chargement asynchrone, annulation, états et nouvelle tentative     |
-| `src/context`    | Context, reducer typé, validation et persistance des données       |
-| `src/services`   | Communication et adaptation des réponses TMDB                      |
-| `src/types`      | Modèles partagés                                                   |
-| `src/test`       | Tests de comportement avec Vitest et Testing Library               |
+Les favoris, la bibliothèque, les notes et le profil sont enregistrés dans le stockage local du navigateur. Ils ne suivent pas la personne sur un autre appareil et peuvent disparaître si les données du navigateur sont effacées. L’export JSON permet d’en garder une copie, mais l’import automatique n’existe pas encore.
 
-Le reducer conserve le film complet avec chaque favori : contrairement à une liste d'identifiants filtrée sur la page courante, un favori provenant d'une recherche reste affichable après navigation ou rechargement.
+Le catalogue et les affiches dépendent de TMDB, d’une connexion Internet et d’un jeton valide. Si TMDB ne répond pas, les pages personnelles restent accessibles, mais le catalogue ne peut pas se mettre à jour. Les informations et affiches restent la propriété de leurs ayants droit. CineScope utilise l’API TMDB sans être approuvé ni certifié par TMDB.
 
-Les fiches, les collections et le profil sont chargés à la demande avec `React.lazy`. Cela évite de charger leurs formulaires et interfaces sur l'accueil. Aucun mémo artificiel n'est ajouté ; un audit au React Profiler reste à effectuer pour documenter des rendus inutiles avant une optimisation supplémentaire.
+## Décision et règles de contribution
 
-## Vérifications
+La décision d’enregistrer les collections dans le navigateur est expliquée dans [ADR-001](adr/ADR-001-donnees-locales.md).
 
-```sh
-npm test
-npm run lint
-npm run build
-npm run preview
-npm run format
-```
+Pour proposer une évolution :
 
-Les tests utilisent des réponses TMDB simulées ; aucun jeton réel n'est nécessaire. Ils couvrent les cartes, favoris multiples, bibliothèque et statuts, persistance, profil, recherche/réinitialisation, pagination, nouvelle tentative, 404 et images cassées. Le catalogue réel a également été ouvert dans la version de production locale.
+1. Décrire le besoin ou le bug dans une issue GitHub ; pour une petite correction, écrire clairement le problème dans la PR peut suffire.
+2. Créer une branche dédiée depuis la branche principale, par exemple `feat/recherche-par-genre` ou `fix/affiche-manquante`.
+3. Faire une modification ciblée, puis ouvrir une PR vers la branche principale. La PR décrit le besoin, le changement, les vérifications effectuées et, pour une modification visible, ajoute une capture d’écran.
+4. Demander une relecture à un autre membre de l’équipe ou au référent du projet. L’auteur de la PR ne la fusionne pas seul.
+5. Vérifier au minimum `npm run lint`, `npm test` et `npm run build`, ainsi que le parcours touché dans le navigateur. Ne jamais ajouter `.env.local` ni un jeton à la PR.
+6. La personne qui relit fusionne quand la PR est compréhensible, que les vérifications passent et que les remarques sont résolues.
+7. Mettre à jour ce guide ou la documentation technique si la façon d’installer, d’utiliser ou de comprendre le code a changé.
 
-Sur cet environnement Windows, le bac à sable peut empêcher Vite de lancer ses processus (`spawn EPERM`). Exécuter les mêmes commandes dans un terminal local autorisé résout cette restriction de l'environnement.
+## Documents du dossier
 
-## Production et déploiement
-
-`npm run build` produit le dossier `dist`. `npm run preview` sert cette version localement (par défaut port 4173). Le déploiement doit construire avec `npm ci && npm run build`, publier `dist` et définir `VITE_TMDB_ACCESS_TOKEN` avant la compilation.
-
-Le fichier `public/_redirects` prévoit le repli des routes vers `index.html` pour les hébergeurs compatibles. Sur un autre hébergement, configurer la même réécriture pour `/movies/:id`, `/profile`, etc., sans rediriger les fichiers statiques existants.
-
-**Application non déployée.** Le dépôt GitHub contient les sources ; pour utiliser l’application, suivre les instructions de démarrage ci-dessus.
-
-## Références
-
-- API : https://developer.themoviedb.org/reference/movie-popular-list
-- Installation Tailwind/Vite : https://tailwindcss.com/docs/installation/using-vite
-
-This product uses the TMDB API but is not endorsed or certified by TMDB. Les affiches et données restent la propriété de leurs ayants droit.
+- [ADR-001 — Garder les données personnelles dans le navigateur](docs/adr/ADR-001-donnees-locales.md)
+- [Documentation technique — Parcours d’une requête TMDB](docs/technique/flux-tmdb.md)
